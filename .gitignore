@@ -1,0 +1,13 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+.env
+# datasets / outputs
+data/
+outputs/
+logs/
+# editor
+*.swp
+.vscode/
+.DS_Store
