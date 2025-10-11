@@ -11,3 +11,10 @@ logs/
 *.swp
 .vscode/
 .DS_Store
+
+# keep directory placeholders
+!scripts/.gitkeep
+!slurm/.gitkeep
+!logs/.gitkeep
+!data/.gitkeep
+!outputs/.gitkeep
