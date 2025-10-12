@@ -168,8 +168,3 @@ Other members should:
 - Add QLoRA (4-bit, 8-bit).  
 - Log metrics with **Weights & Biases**.  
 - Summarize results → `reports/` or `notebooks/`.
-
----
-
-**Maintainer:** Keemin Lee (kjl2175)  
-**GitHub:** [keeminlee/hpml-peft-benchmark](https://github.com/keeminlee/hpml-peft-benchmark)
