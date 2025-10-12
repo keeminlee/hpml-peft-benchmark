@@ -1,7 +1,5 @@
 # HPML PEFT Benchmark (LoRA vs QLoRA)
 **Course:** COMS E6998-012 High-Performance Machine Learning (Fall 2025)  
-**Owner:** Keemin Lee (kjl2175)  
-**Date:** October 12, 2025
 
 ---
 
