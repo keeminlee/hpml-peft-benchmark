@@ -4,10 +4,8 @@
 ---
 
 ## Overview
-This repository contains code and cluster setup for benchmarking **parameter-efficient fine-tuning (PEFT)** methods on large language models.  
-We compare full fine-tuning, **LoRA**, and **Q-LoRA** across GPU memory, latency, and accuracy.
-
-The environment and workflow are configured for the **Columbia Insomnia GPU Cluster**.
+This repository contains code and setup for benchmarking **parameter-efficient fine-tuning (PEFT)** methods such as **LoRA** and **QLoRA** against full fine-tuning baselines.  
+We evaluate trade-offs across GPU memory, latency, and accuracy using the **Columbia Insomnia GPU Cluster**.
 
 ---
 
@@ -15,66 +13,64 @@ The environment and workflow are configured for the **Columbia Insomnia GPU Clus
 ```
 hpml-peft-benchmark/
  ├─ scripts/        # Training, profiling, and evaluation scripts
- ├─ slurm/          # Job submission scripts
- ├─ docs/           # Cluster setup and environment notes
+ ├─ slurm/          # SLURM job submission scripts
+ ├─ docs/           # Environment and setup documentation
  ├─ env/            # Environment specs (requirements.txt, YAML)
- ├─ outputs/        # Placeholder (real outputs in scratch/outputs)
- ├─ logs/           # Placeholder (real logs in scratch/logs)
- └─ data/           # Placeholder (real datasets in scratch/data)
+ ├─ reports/        # Experimental results and analysis
+ └─ notebooks/      # Optional interactive analysis notebooks
 ```
+> Note: `data/`, `outputs/`, and `logs/` are stored externally on cluster scratch space.
 
 ---
 
 ## Environment Setup
 
-### 1. Load Anaconda and Initialize Conda
+### 1. Load and initialize Conda
 ```bash
 module load anaconda/2023.09
 eval "$(/insomnia001/shared/apps/anaconda/2023.09/bin/conda shell.bash hook)"
 ```
 
-### 2. Create Project Environment
+### 2. Create project environment
 ```bash
 conda create -p $HOME/.conda/envs/peft_benchmark python=3.10 -y
 conda activate $HOME/.conda/envs/peft_benchmark
 ```
 
-### 3. Install Dependencies
+### 3. Install dependencies
 ```bash
 pip install --index-url https://download.pytorch.org/whl/cu121 torch torchvision torchaudio
 pip install transformers datasets peft bitsandbytes accelerate deepspeed wandb pynvml
 ```
 
-### 4. Make Persistent (add to ~/.bashrc)
+### 4. Make persistent (optional)
+Add this to your `~/.bashrc`:
 ```bash
-# Conda setup
 eval "$(/insomnia001/shared/apps/anaconda/2023.09/bin/conda shell.bash hook)"
 export CONDA_ENVS_DIRS="$HOME/.conda/envs"
 export CONDA_PKGS_DIRS="$HOME/.conda/pkgs"
-
-# Shared Hugging Face cache
-export HF_HOME=/insomnia001/depts/edu/COMS-E6998-012/kjl2175/cache/hf
-export TRANSFORMERS_CACHE=$HF_HOME
 ```
 
 ---
 
 ## Cluster Directory Layout
+
+Keemin's scratch space (serving as shared data/cache source):
 ```
 /insomnia001/depts/edu/COMS-E6998-012/kjl2175/
  ├─ code/        → cloned GitHub repo
- ├─ data/        → real datasets (e.g., SST-2)
- ├─ outputs/     → model checkpoints, metrics
- ├─ logs/        → SLURM + training logs
+ ├─ data/        → read-only shared datasets
+ ├─ outputs/     → personal model checkpoints (per-user)
+ ├─ logs/        → SLURM + training logs (per-user)
  └─ cache/       → shared Hugging Face cache
 ```
 
-Create this structure:
+Each teammate keeps **their own outputs/logs**, while reading shared data and cache from Keemin’s scratch.
+
+### Create your own structure (for each teammate)
 ```bash
-SCR=/insomnia001/depts/edu/COMS-E6998-012/kjl2175
-mkdir -p $SCR/{code,data,outputs,logs,cache}
-cd $SCR/code
-git clone git@github.com:keeminlee/hpml-peft-benchmark.git
+MY_SCR=/insomnia001/depts/edu/COMS-E6998-012/<your-UNI>
+mkdir -p $MY_SCR/{outputs,logs}
 ```
 
 ---
@@ -91,7 +87,7 @@ python scripts/test_gpu.py
 ```
 
 ### Batch job (preferred)
-Example: `slurm/train_baseline.slurm`
+Example SLURM file `slurm/train_baseline.slurm`:
 ```bash
 #!/bin/bash
 #SBATCH --job-name=baseline_sst2
@@ -99,72 +95,82 @@ Example: `slurm/train_baseline.slurm`
 #SBATCH --gres=gpu:1
 #SBATCH --time=01:00:00
 #SBATCH --account=edu
-#SBATCH --output=/insomnia001/depts/edu/COMS-E6998-012/kjl2175/logs/%x-%j.out
+#SBATCH --output=/insomnia001/depts/edu/COMS-E6998-012/<your-UNI>/logs/%x-%j.out
 
 module load anaconda/2023.09
 eval "$(/insomnia001/shared/apps/anaconda/2023.09/bin/conda shell.bash hook)"
 conda activate $HOME/.conda/envs/peft_benchmark
 
 export HF_HOME=/insomnia001/depts/edu/COMS-E6998-012/kjl2175/cache/hf
-cd /insomnia001/depts/edu/COMS-E6998-012/kjl2175/code/hpml-peft-benchmark
+export TRANSFORMERS_CACHE=$HF_HOME
+DATA_DIR=/insomnia001/depts/edu/COMS-E6998-012/kjl2175/data
 
-python scripts/train_baseline.py   --data_dir /insomnia001/depts/edu/COMS-E6998-012/kjl2175/data   --outdir   /insomnia001/depts/edu/COMS-E6998-012/kjl2175/outputs/kjl2175   --logdir   /insomnia001/depts/edu/COMS-E6998-012/kjl2175/logs/kjl2175
+python scripts/train_baseline.py   --data_dir $DATA_DIR   --outdir   /insomnia001/depts/edu/COMS-E6998-012/<your-UNI>/outputs/${USER}   --logdir   /insomnia001/depts/edu/COMS-E6998-012/<your-UNI>/logs/${USER}
 ```
 
-Submit the job:
+Submit and monitor:
 ```bash
 cd slurm
 sbatch train_baseline.slurm
 squeue -u $USER
-tail -f /insomnia001/depts/edu/COMS-E6998-012/kjl2175/logs/baseline_sst2-<JOBID>.out
+tail -f /insomnia001/depts/edu/COMS-E6998-012/<your-UNI>/logs/baseline_sst2-<JOBID>.out
 ```
 
 ---
 
-## Validation Scripts
-- `scripts/test_gpu.py` → verifies GPU availability  
-- `slurm/gpu_sanity.slurm` → short GPU test on compute node
+## Shared Resources and Permissions
 
-Submit:
+ACLs are **not supported** on this filesystem, so direct shared writing is unavailable.  
+Instead, follow this model:
+
+| Path | Access | Description |
+|------|---------|-------------|
+| `/insomnia.../kjl2175/data/` | Read-only | Shared datasets for all |
+| `/insomnia.../kjl2175/cache/hf/` | Read-only | Shared Hugging Face model cache |
+| `/insomnia.../<UNI>/outputs/` | Read/Write (owner only) | Each teammate’s training outputs |
+| `/insomnia.../<UNI>/logs/` | Read/Write (owner only) | Job logs per teammate |
+
+### To make shared data/cache readable (done by Keemin)
 ```bash
-sbatch slurm/gpu_sanity.slurm
+chmod -R a+rX /insomnia001/depts/edu/COMS-E6998-012/kjl2175/data
+chmod -R a+rX /insomnia001/depts/edu/COMS-E6998-012/kjl2175/cache
 ```
 
 ---
 
-## Path Conventions
-| Path | Purpose | Git-tracked? |
-|------|----------|--------------|
-| `/insomnia.../code/hpml-peft-benchmark/` | Code repo | ✅ |
-| `/insomnia.../data/` | Datasets | ❌ |
-| `/insomnia.../outputs/` | Model results | ❌ |
-| `/insomnia.../logs/` | SLURM + training logs | ❌ |
-| `/insomnia.../cache/` | HF cache | ❌ |
+## Teammate Quickstart
+
+1. **Clone the repo**
+   ```bash
+   git clone git@github.com:keeminlee/hpml-peft-benchmark.git
+   ```
+
+2. **Create environment**
+   ```bash
+   conda create -p $HOME/.conda/envs/peft_benchmark python=3.10 -y
+   conda activate $HOME/.conda/envs/peft_benchmark
+   pip install -r env/requirements.txt
+   ```
+
+3. **Set shared paths**
+   ```bash
+   export HF_HOME=/insomnia001/depts/edu/COMS-E6998-012/kjl2175/cache/hf
+   export TRANSFORMERS_CACHE=$HF_HOME
+   DATA_DIR=/insomnia001/depts/edu/COMS-E6998-012/kjl2175/data
+   ```
+
+4. **Run jobs using your own scratch outputs/logs**
+   ```bash
+   MY_SCR=/insomnia001/depts/edu/COMS-E6998-012/<your-UNI>
+   python scripts/train_baseline.py      --data_dir $DATA_DIR      --outdir   $MY_SCR/outputs/${USER}      --logdir   $MY_SCR/logs/${USER}
+   ```
 
 ---
 
-## Sanity Checklist
-- [x] SSH access to Insomnia (`ssh kjl2175@insomnia.rcs.columbia.edu`)
-- [x] Git + SSH key configured (`ssh -T git@github.com`)
-- [x] Conda env created in `$HOME/.conda/envs/peft_benchmark`
-- [x] Repo cloned under scratch `code/`
-- [x] HF cache and data paths configured
-- [x] Baseline SLURM job runs successfully
-
----
-
-## Notes for Teammates
-Until the shared **team scratch space** is granted (or we just keep using this), this project uses Keemin’s scratch directory as the working area.  
-Other members should:
-1. Clone the repo under their own home or scratch.  
-2. Point their `--outdir`, `--logdir`, and `HF_HOME` to:  
-   `/insomnia001/depts/edu/COMS-E6998-012/kjl2175/`
-
----
-
-## Next Steps
-- Run baseline (DistilBERT) training → collect accuracy, GPU memory, latency.  
-- Extend to LoRA (rank ∈ {4,8,16,32}).  
-- Add QLoRA (4-bit, 8-bit).  
-- Log metrics with **Weights & Biases**.  
-- Summarize results → `reports/` or `notebooks/`.
+## Checklist
+- [x] SSH access to cluster confirmed  
+- [x] Repo cloned from GitHub  
+- [x] Conda environment created  
+- [x] Shared data/cache accessible (read-only)  
+- [x] Jobs writing to per-user scratch directories  
+- [x] Baseline SLURM job runs successfully  
