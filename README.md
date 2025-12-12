@@ -77,6 +77,23 @@ mkdir -p $MY_SCR/{outputs,logs}
 
 ## Running Jobs
 
+### One-command runners (single GPU)
+
+All scripts share the same CLI. Replace `OUT`/`LOG` roots with your scratch paths.
+
+```bash
+# Baseline fine-tuning
+python scripts/train_baseline.py --outdir OUT --logdir LOG --report_to none
+
+# LoRA (rank sweep supported via --rank)
+python scripts/train_lora.py --outdir OUT --logdir LOG --report_to none --rank 8
+
+# QLoRA (NF4 4-bit quantization)
+python scripts/train_qlora.py --outdir OUT --logdir LOG --report_to none --rank 8
+```
+
+Each run creates `<outdir>/<run_id>/` containing `env.json`, `metrics.csv`, `summary.json`, `summary.csv`, and a `checkpoint/` (baseline) or `adapter/` (LoRA/QLoRA) directory.
+
 ### Interactive GPU shell
 ```bash
 srun --pty -t 0-01:00 --gres=gpu:1 -A edu /bin/bash
@@ -103,9 +120,11 @@ conda activate $HOME/.conda/envs/peft_benchmark
 
 export HF_HOME=/insomnia001/depts/edu/COMS-E6998-012/kjl2175/cache/hf
 export TRANSFORMERS_CACHE=$HF_HOME
-DATA_DIR=/insomnia001/depts/edu/COMS-E6998-012/kjl2175/data
 
-python scripts/train_baseline.py   --data_dir $DATA_DIR   --outdir   /insomnia001/depts/edu/COMS-E6998-012/<your-UNI>/outputs/${USER}   --logdir   /insomnia001/depts/edu/COMS-E6998-012/<your-UNI>/logs/${USER}
+python scripts/train_baseline.py \
+  --outdir   /insomnia001/depts/edu/COMS-E6998-012/<your-UNI>/outputs/${USER} \
+  --logdir   /insomnia001/depts/edu/COMS-E6998-012/<your-UNI>/logs/${USER} \
+  --report_to none
 ```
 
 Submit and monitor:
@@ -162,8 +181,26 @@ chmod -R a+rX /insomnia001/depts/edu/COMS-E6998-012/kjl2175/cache
 4. **Run jobs using your own scratch outputs/logs**
    ```bash
    MY_SCR=/insomnia001/depts/edu/COMS-E6998-012/<your-UNI>
-   python scripts/train_baseline.py      --data_dir $DATA_DIR      --outdir   $MY_SCR/outputs/${USER}      --logdir   $MY_SCR/logs/${USER}
+   python scripts/train_baseline.py --outdir $MY_SCR/outputs/${USER} --logdir $MY_SCR/logs/${USER} --report_to none
    ```
+
+---
+
+## Reporting and aggregation
+
+After running experiments, aggregate every `summary.json` under `outputs/` into a single CSV:
+
+```bash
+python scripts/collect_results.py --root outputs --out reports/results.csv
+```
+
+Generate quick plots (saved to `reports/figures/`):
+
+```bash
+python reports/summary.py
+```
+
+The benchmark compares **accuracy vs. memory vs. throughput** across full fine-tuning, LoRA, and QLoRA (r ∈ {4, 8, 16}). Higher throughput and lower VRAM typically come with some accuracy trade-off; the unified summaries make these trade-offs easy to inspect.
 
 ---
 
