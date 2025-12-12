@@ -7,6 +7,8 @@ __pycache__/
 data/
 outputs/
 logs/
+scripts/keemin/tmp/
+wandb/
 # editor
 *.swp
 .vscode/
