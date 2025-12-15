@@ -66,7 +66,8 @@ def main():
         target_modules=["q_lin", "v_lin"],
         lora_dropout=args.lora_dropout,
         bias="none",
-        task_type="SEQ_CLS",
+        task_type=None,  # 🔴 critical
+        modules_to_save=[],  # 🔴 prevent classifier handling
     )
     model = get_peft_model(model, lora_cfg)
 
