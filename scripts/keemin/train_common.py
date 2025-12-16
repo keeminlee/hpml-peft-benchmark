@@ -146,31 +146,61 @@ class EpochTimeCallback(TrainerCallback):
 def parse_base_args(description: str, include_peft: bool = False) -> argparse.ArgumentParser:
     default_outdir, default_logdir = default_run_dirs()
 
-    p = argparse.ArgumentParser(description=description)
-    p.add_argument("--model", type=str, default="distilbert-base-uncased")
-    p.add_argument("--task", type=str, default="sst2")
-    p.add_argument("--epochs", type=int, default=3)
-    p.add_argument("--train_bs", type=int, default=32)
-    p.add_argument("--eval_bs", type=int, default=64)
-    p.add_argument("--lr", type=float, default=3e-5)
-    p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--outdir", type=str, default=default_outdir)
-    p.add_argument("--logdir", type=str, default=default_logdir)
-    p.add_argument("--report_to", type=str, default="none", choices=["wandb", "none"])
-    p.add_argument("--weight_decay", type=float, default=0.01)
-    p.add_argument("--grad_accum", type=int, default=1)
-    p.add_argument("--max_length", type=int, default=128)
-    p.add_argument("--warmup_ratio", type=float, default=0.1)
-    p.add_argument("--fp16", action="store_true")
-    p.add_argument("--bf16", action="store_true")
-    p.add_argument("--grad_ckpt", action="store_true")
-    p.add_argument("--local_files_only", action="store_true")
-    p.add_argument("--run_name", type=str, default=None)
-    p.add_argument("--max_steps", type=int, default=-1)
+    p = argparse.ArgumentParser(
+        description=description,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    p.add_argument("--model", type=str, default="distilbert-base-uncased",
+                   help="pretrained model name or path")
+    p.add_argument("--task", type=str, default="sst2",
+                   help="task or dataset name")
+    p.add_argument("--epochs", type=int, default=3,
+                   help="number of training epochs (ignored if --max_steps > 0)")
+    p.add_argument("--train_bs", type=int, default=32,
+                   help="training batch size per device")
+    p.add_argument("--eval_bs", type=int, default=64,
+                   help="evaluation batch size per device")
+    p.add_argument("--lr", type=float, default=3e-5,
+                   help="learning rate")
+    p.add_argument("--seed", type=int, default=42,
+                   help="random seed")
+    p.add_argument("--outdir", type=str, default=default_outdir,
+                   help="output directory for checkpoints and artifacts")
+    p.add_argument("--logdir", type=str, default=default_logdir,
+                   help="directory for logs and metrics")
+    p.add_argument("--report_to", type=str, default="none",
+                   choices=["wandb", "none"],
+                   help="logging backend")
+    p.add_argument("--weight_decay", type=float, default=0.01,
+                   help="weight decay coefficient")
+    p.add_argument("--grad_accum", type=int, default=1,
+                   help="gradient accumulation steps")
+    p.add_argument("--max_length", type=int, default=128,
+                   help="maximum input sequence length")
+    p.add_argument("--warmup_ratio", type=float, default=0.1,
+                   help="fraction of steps for learning-rate warmup")
+    p.add_argument("--fp16", action="store_true",
+                   help="enable FP16 mixed-precision training")
+    p.add_argument("--bf16", action="store_true",
+                   help="enable BF16 mixed-precision training")
+    p.add_argument("--grad_ckpt", action="store_true",
+                   help="enable gradient checkpointing")
+    p.add_argument("--local_files_only", action="store_true",
+                   help="load models/tokenizers from local cache only")
+    p.add_argument("--run_name", type=str, default=None,
+                   help="optional experiment name")
+    p.add_argument("--max_steps", type=int, default=-1,
+                   help="maximum number of training steps (overrides epochs)")
+
     if include_peft:
-        p.add_argument("--rank", type=int, default=8)
-        p.add_argument("--lora_alpha", type=int, default=16)
-        p.add_argument("--lora_dropout", type=float, default=0.05)
+        p.add_argument("--rank", type=int, default=8,
+                       help="LoRA rank (PEFT only)")
+        p.add_argument("--lora_alpha", type=int, default=16,
+                       help="LoRA scaling factor (PEFT only)")
+        p.add_argument("--lora_dropout", type=float, default=0.05,
+                       help="LoRA dropout probability (PEFT only)")
+
     return p
 
 
