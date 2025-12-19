@@ -7,6 +7,59 @@
 This repository contains code and setup for benchmarking **parameter-efficient fine-tuning (PEFT)** methods such as **LoRA** and **QLoRA** against full fine-tuning baselines.  
 We evaluate trade-offs across GPU memory, latency, and accuracy using the **Columbia Insomnia GPU Cluster**.
 
+# HPML Project: Efficient Fine-Tuning of Transformer Models Under Resource Constraints
+
+## Team Information
+- **Team Name**: HPML-PEFT
+- **Members**:
+  - Keemin Lee (kjl2175)
+  - Sreeram Raghammudi (sr4314)
+  - Aaryaman Bajaj (ab6105)
+  - Aryaman Velampalli (akv2129)
+  - Aravindan Jambunathan (aj3394)
+
+## 1. Problem Statement
+Fine-tuning large transformer-based language models is computationally expensive in terms of GPU memory, training time, and energy consumption. This project investigates whether parameter-efficient fine-tuning (PEFT) techniques—specifically LoRA and QLoRA—can substantially reduce resource usage while maintaining competitive task accuracy. The objective is to characterize accuracy–efficiency trade-offs under constrained hardware settings using controlled, reproducible benchmarks.
+
+
+## 2. Model Description
+- **Base Model**: DistilBERT (66.9M parameters)
+- **Framework**: PyTorch + Hugging Face Transformers
+- **Fine-Tuning Variants**:
+  - Full fine-tuning (all parameters trainable)
+  - LoRA: Low-rank adapters applied to query and value projection layers
+  - QLoRA: LoRA combined with 4-bit NF4 quantization via bitsandbytes
+- **Custom Modifications**:
+  - Parameter freezing for backbone weights
+  - Rank sweep support (r ∈ {4, 8, 16, 32})
+  - Quantized base weights with BF16 compute for QLoRA
+
+
+## 3. Final Results Summary
+
+| Metric | Value |
+|---------------------------|----------------|
+| Dataset | SST-2 (GLUE) |
+| Best Baseline Accuracy | 91.86% |
+| Best LoRA Accuracy | 87.96% (r=16/32) |
+| Best QLoRA Accuracy | 88.19% (r=32) |
+| Peak GPU Memory (Baseline) | ~1306 MB |
+| Peak GPU Memory (QLoRA) | ~696 MB |
+| Training Time/Epoch (Baseline) | ~171 s |
+| Training Time/Epoch (LoRA) | ~48 s |
+| Device | NVIDIA A100 |
+
+
+### B. Weights & Biases Dashboard
+Training and evaluation metrics are logged to Weights & Biases:
+
+🔗 https://wandb.ai/keemin/huggingface?nw=nwuserkeeminlee 
+🔗 https://wandb.ai/akv2129-columbia-university/peft_benchmark_final?nw=nwuserakv2129
+
+### C. Training vs Inference
+This repository supports **training-only benchmarking** of fine-tuning strategies.
+Inference is not the primary focus and is limited to validation-time evaluation during training.
+
 ---
 
 ## Project Structure
