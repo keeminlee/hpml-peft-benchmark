@@ -9,6 +9,9 @@ We evaluate trade-offs across GPU memory, latency, and accuracy using the **Colu
 
 # HPML Project: Efficient Fine-Tuning of Transformer Models Under Resource Constraints
 
+# Medium Article: 
+🔗 https://medium.com/@sr4314/efficient-fine-tuning-of-transformer-models-under-resource-constraints-b27cca057ca6?postPublishedType=initial
+
 ## Team Information
 - **Team Name**: HPML-PEFT
 - **Members**:
